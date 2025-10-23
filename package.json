@@ -1,0 +1,30 @@
+{
+  "name": "appishume-chat-realtime",
+  "version": "1.0.0",
+  "description": "Sistema de chat en tiempo real - ISHUME",
+  "main": "socket-server.js",
+  "scripts": {
+    "start": "node socket-server.js",
+    "dev": "nodemon socket-server.js"
+  },
+  "keywords": [
+    "websocket",
+    "socket.io",
+    "chat",
+    "realtime",
+    "mysql",
+    "codeigniter"
+  ],
+  "author": "ISHUME Team",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.18.2",
+    "socket.io": "^4.7.2",
+    "mysql2": "^3.6.0",
+    "jsonwebtoken": "^9.0.2",
+    "cors": "^2.8.5"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  }
+}
