@@ -6,7 +6,8 @@ cmds = [
     "curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer",
     "chmod +x /usr/local/bin/composer",
     "/usr/local/bin/composer install --no-dev --optimize-autoloader",
-    "mkdir -p /run/php-fpm"
+    "mkdir -p /run/php-fpm",
+    "chmod +x /app/start.sh"
 ]
 
 [phases.build]
@@ -15,4 +16,4 @@ cmds = [
 ]
 
 [start]
-cmd = "php-fpm -D -c /app/php-fpm.conf && nginx -c /app/nginx.conf"
+cmd = "/app/start.sh"

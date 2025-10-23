@@ -3,7 +3,7 @@
     "builder": "NIXPACKS"
   },
   "deploy": {
-    "startCommand": "php-fpm -D -c /app/php-fpm.conf && nginx -c /app/nginx.conf",
+    "startCommand": "/app/start.sh",
     "healthcheckPath": "/",
     "healthcheckTimeout": 100,
     "restartPolicyType": "ON_FAILURE",
