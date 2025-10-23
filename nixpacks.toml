@@ -1,6 +1,3 @@
-# Railway deployment configuration
-# Rename this file to nixpacks.toml for Railway deployment
-
 [phases.setup]
 nixPkgs = ["php82", "composer"]
 
