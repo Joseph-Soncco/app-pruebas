@@ -24,14 +24,24 @@ const server = http.createServer(app);
 
 // Configurar CORS
 app.use(cors({
-    origin: ["http://localhost", "http://127.0.0.1", "http://appishume.test"],
+    origin: [
+        "http://localhost", 
+        "http://127.0.0.1", 
+        "http://appishume.test",
+        process.env.RAILWAY_PUBLIC_DOMAIN ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN}` : "*"
+    ],
     credentials: true
 }));
 
 // Configurar Socket.IO
 const io = socketIo(server, {
     cors: {
-        origin: ["http://localhost", "http://127.0.0.1", "http://appishume.test"],
+        origin: [
+            "http://localhost", 
+            "http://127.0.0.1", 
+            "http://appishume.test",
+            process.env.RAILWAY_PUBLIC_DOMAIN ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN}` : "*"
+        ],
         methods: ["GET", "POST"],
         credentials: true
     }
