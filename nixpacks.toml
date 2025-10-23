@@ -1,13 +1,12 @@
 [phases.setup]
-nixPkgs = ["php82", "curl", "nginx"]
+nixPkgs = ["php82", "curl"]
 
 [phases.install]
 cmds = [
     "curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer",
     "chmod +x /usr/local/bin/composer",
     "/usr/local/bin/composer install --no-dev --optimize-autoloader",
-    "mkdir -p /run/php-fpm",
-    "chmod +x /app/start.sh"
+    "chmod +x /app/start-simple.sh"
 ]
 
 [phases.build]
@@ -16,4 +15,4 @@ cmds = [
 ]
 
 [start]
-cmd = "/app/start.sh"
+cmd = "/app/start-simple.sh"
