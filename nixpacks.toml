@@ -1,11 +1,12 @@
 [phases.setup]
-nixPkgs = ["php82", "curl"]
+nixPkgs = ["php82", "curl", "nginx"]
 
 [phases.install]
 cmds = [
     "curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer",
     "chmod +x /usr/local/bin/composer",
-    "/usr/local/bin/composer install --no-dev --optimize-autoloader"
+    "/usr/local/bin/composer install --no-dev --optimize-autoloader",
+    "mkdir -p /run/php-fpm"
 ]
 
 [phases.build]
@@ -14,4 +15,4 @@ cmds = [
 ]
 
 [start]
-cmd = "php spark serve --host=0.0.0.0 --port=$PORT"
+cmd = "php-fpm -D -c /app/php-fpm.conf && nginx -c /app/nginx.conf"
