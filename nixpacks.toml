@@ -5,8 +5,7 @@ nixPkgs = ["php82", "curl"]
 cmds = [
     "curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer",
     "chmod +x /usr/local/bin/composer",
-    "/usr/local/bin/composer install --no-dev --optimize-autoloader",
-    "chmod +x /app/start-ultra-simple.sh"
+    "/usr/local/bin/composer install --no-dev --optimize-autoloader"
 ]
 
 [phases.build]
@@ -15,4 +14,4 @@ cmds = [
 ]
 
 [start]
-cmd = "/app/start-ultra-simple.sh"
+cmd = "cd /app/public && php -S 0.0.0.0:$PORT router.php"
