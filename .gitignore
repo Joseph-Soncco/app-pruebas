@@ -46,6 +46,7 @@ $RECYCLE.BIN/
 Vagrantfile
 railway.env
 railway-php.env
+env.railway
 .railwayignore
 
 #-------------------------
