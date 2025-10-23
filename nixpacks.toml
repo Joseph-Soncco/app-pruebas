@@ -6,13 +6,13 @@ cmds = [
     "curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer",
     "chmod +x /usr/local/bin/composer",
     "/usr/local/bin/composer install --no-dev --optimize-autoloader",
-    "chmod +x /app/start-simple.sh"
+    "chmod +x /app/start-ultra-simple.sh"
 ]
 
 [phases.build]
 cmds = [
-    "echo 'Build completed'"
+    "echo 'Build completed successfully'"
 ]
 
 [start]
-cmd = "/app/start-simple.sh"
+cmd = "/app/start-ultra-simple.sh"

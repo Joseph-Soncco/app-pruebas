@@ -3,8 +3,8 @@
     "builder": "NIXPACKS"
   },
   "deploy": {
-    "startCommand": "/app/start-simple.sh",
-    "healthcheckPath": "/",
+    "startCommand": "/app/start-ultra-simple.sh",
+    "healthcheckPath": "/health.php",
     "healthcheckTimeout": 300,
     "restartPolicyType": "ON_FAILURE",
     "restartPolicyMaxRetries": 10
