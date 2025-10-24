@@ -26,14 +26,14 @@ class Database extends Config
      */
     public array $default = [
         'DSN'          => '',
-        'hostname'     => $_ENV['DB_HOST'] ?? 'localhost',
-        'username'     => $_ENV['DB_USER'] ?? 'root',
-        'password'     => $_ENV['DB_PASSWORD'] ?? '',
-        'database'     => $_ENV['DB_NAME'] ?? 'ishume',
+        'hostname'     => 'localhost',
+        'username'     => 'root',
+        'password'     => '',
+        'database'     => 'ishume',
         'DBDriver'     => 'MySQLi',
         'DBPrefix'     => '',
         'pConnect'     => false,
-        'DBDebug'      => false, // Disable DB debug in production
+        'DBDebug'      => false,
         'charset'      => 'utf8mb4',
         'DBCollat'     => 'utf8mb4_general_ci',
         'swapPre'      => '',
@@ -41,7 +41,7 @@ class Database extends Config
         'compress'     => false,
         'strictOn'     => false,
         'failover'     => [],
-        'port'         => $_ENV['DB_PORT'] ?? 3306,
+        'port'         => 3306,
         'numberNative' => false,
         'foundRows'    => false,
         'dateFormat'   => [
@@ -50,6 +50,34 @@ class Database extends Config
             'time'     => 'H:i:s',
         ],
     ];
+
+    /**
+     * Constructor to set database configuration dynamically
+     */
+    public function __construct()
+    {
+        parent::__construct();
+        
+        // Set database configuration from environment variables
+        if (isset($_ENV['DB_HOST']) && !empty($_ENV['DB_HOST'])) {
+            $this->default['hostname'] = $_ENV['DB_HOST'];
+        }
+        if (isset($_ENV['DB_USER']) && !empty($_ENV['DB_USER'])) {
+            $this->default['username'] = $_ENV['DB_USER'];
+        }
+        if (isset($_ENV['DB_PASSWORD'])) {
+            $this->default['password'] = $_ENV['DB_PASSWORD'];
+        }
+        if (isset($_ENV['DB_NAME']) && !empty($_ENV['DB_NAME'])) {
+            $this->default['database'] = $_ENV['DB_NAME'];
+        }
+        if (isset($_ENV['DB_PORT']) && !empty($_ENV['DB_PORT'])) {
+            $this->default['port'] = (int)$_ENV['DB_PORT'];
+        }
+        if (isset($_ENV['CI_ENVIRONMENT']) && $_ENV['CI_ENVIRONMENT'] !== 'production') {
+            $this->default['DBDebug'] = true;
+        }
+    }
 
     //    /**
     //     * Sample database connection for SQLite3.
