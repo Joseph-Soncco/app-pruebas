@@ -30,9 +30,9 @@ $routes->group('', ['filter' => 'auth'], function($routes) {
     $routes->get('mensajeria/getMensajes/(:num)', 'ChatController::getMensajes/$1');
     $routes->post('mensajeria/enviarMensaje', 'ChatController::enviarMensaje');
     $routes->post('mensajeria/marcarLeido', 'ChatController::marcarLeido');
-    $routes->get('mensajeria/getUsuariosOnline', 'ChatController::getUsuariosOnline');
+    $routes->get('mensajeria/getUsuarios', 'ChatController::getUsuarios');
     $routes->post('mensajeria/crearConversacion', 'ChatController::crearConversacion');
-    $routes->get('mensajeria/getWebSocketToken', 'ChatController::getWebSocketToken');
+    $routes->get('mensajeria/getWebSocketUrl', 'ChatController::getWebSocketUrl');
     
     // APIs adicionales para usuarios
     $routes->get('usuarios/getUsuariosActivos', 'UsuariosController::getUsuariosActivos');

@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Mensajería</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ccc; }
+        .success { background-color: #d4edda; }
+        .error { background-color: #f8d7da; }
+        .loading { background-color: #fff3cd; }
+        button { margin: 5px; padding: 10px; }
+    </style>
+</head>
+<body>
+    <h1>Test de Funcionalidad de Mensajería</h1>
+    
+    <div class="test-section">
+        <h3>1. Test de Endpoints</h3>
+        <button onclick="testEndpoint('/mensajeria/test')">Test ChatController</button>
+        <button onclick="testEndpoint('/mensajeria/getConversaciones')">Test Conversaciones</button>
+        <button onclick="testEndpoint('/mensajeria/getUsuarios')">Test Usuarios</button>
+        <button onclick="testEndpoint('/mensajeria/getWebSocketUrl')">Test WebSocket URL</button>
+        <div id="endpoint-results"></div>
+    </div>
+    
+    <div class="test-section">
+        <h3>2. Test de JavaScript</h3>
+        <button onclick="testJavaScript()">Test JavaScript</button>
+        <div id="js-results"></div>
+    </div>
+    
+    <div class="test-section">
+        <h3>3. Test de WebSocket</h3>
+        <button onclick="testWebSocket()">Test WebSocket</button>
+        <div id="ws-results"></div>
+    </div>
+    
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        function testEndpoint(url) {
+            const resultsDiv = document.getElementById('endpoint-results');
+            const testDiv = document.createElement('div');
+            testDiv.className = 'loading';
+            testDiv.innerHTML = `Probando: ${url}...`;
+            resultsDiv.appendChild(testDiv);
+            
+            $.get(url)
+                .done(function(response) {
+                    testDiv.className = 'success';
+                    testDiv.innerHTML = `✅ ${url} - ${JSON.stringify(response)}`;
+                })
+                .fail(function(xhr) {
+                    testDiv.className = 'error';
+                    testDiv.innerHTML = `❌ ${url} - Error: ${xhr.status} ${xhr.statusText}`;
+                });
+        }
+        
+        function testJavaScript() {
+            const resultsDiv = document.getElementById('js-results');
+            const testDiv = document.createElement('div');
+            
+            try {
+                // Verificar que las variables globales existen
+                if (typeof MENSAJERIA_CONFIG !== 'undefined') {
+                    testDiv.className = 'success';
+                    testDiv.innerHTML = `✅ JavaScript cargado correctamente<br>Base URL: ${MENSAJERIA_CONFIG.baseUrl}`;
+                } else {
+                    testDiv.className = 'error';
+                    testDiv.innerHTML = `❌ MENSAJERIA_CONFIG no está definido`;
+                }
+            } catch (error) {
+                testDiv.className = 'error';
+                testDiv.innerHTML = `❌ Error en JavaScript: ${error.message}`;
+            }
+            
+            resultsDiv.appendChild(testDiv);
+        }
+        
+        function testWebSocket() {
+            const resultsDiv = document.getElementById('ws-results');
+            const testDiv = document.createElement('div');
+            testDiv.className = 'loading';
+            testDiv.innerHTML = 'Probando WebSocket...';
+            resultsDiv.appendChild(testDiv);
+            
+            // Intentar obtener URL del WebSocket
+            $.get('/mensajeria/getWebSocketUrl')
+                .done(function(response) {
+                    if (response.success) {
+                        const wsUrl = response.data.url;
+                        testDiv.innerHTML = `✅ WebSocket URL obtenida: ${wsUrl}`;
+                        
+                        // Intentar conectar
+                        try {
+                            const ws = new WebSocket(wsUrl);
+                            
+                            ws.onopen = function() {
+                                testDiv.className = 'success';
+                                testDiv.innerHTML += '<br>✅ WebSocket conectado correctamente';
+                                ws.close();
+                            };
+                            
+                            ws.onerror = function(error) {
+                                testDiv.className = 'error';
+                                testDiv.innerHTML += '<br>❌ Error conectando WebSocket';
+                            };
+                            
+                            ws.onclose = function() {
+                                testDiv.innerHTML += '<br>🔌 WebSocket cerrado';
+                            };
+                            
+                        } catch (error) {
+                            testDiv.className = 'error';
+                            testDiv.innerHTML += `<br>❌ Error: ${error.message}`;
+                        }
+                    } else {
+                        testDiv.className = 'error';
+                        testDiv.innerHTML = `❌ Error obteniendo URL: ${response.message}`;
+                    }
+                })
+                .fail(function() {
+                    testDiv.className = 'error';
+                    testDiv.innerHTML = '❌ Error obteniendo URL del WebSocket';
+                });
+        }
+    </script>
+</body>
+</html>

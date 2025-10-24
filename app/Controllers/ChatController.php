@@ -104,12 +104,12 @@ class ChatController extends BaseController
             
             return $this->response->setJSON([
                 'success' => true,
-                'conversaciones' => $conversaciones
+                'data' => $conversaciones
             ]);
         } catch (\Exception $e) {
             return $this->response->setJSON([
                 'success' => false,
-                'error' => $e->getMessage()
+                'message' => $e->getMessage()
             ]);
         }
     }
@@ -245,19 +245,19 @@ class ChatController extends BaseController
     /**
      * Obtener usuarios online
      */
-    public function getUsuariosOnline()
+    public function getUsuarios()
     {
         try {
             $usuarios = $this->usuarioConectadoModel->getUsuariosOnline();
             
             return $this->response->setJSON([
                 'success' => true,
-                'usuarios' => $usuarios
+                'data' => $usuarios
             ]);
         } catch (\Exception $e) {
             return $this->response->setJSON([
                 'success' => false,
-                'error' => $e->getMessage()
+                'message' => $e->getMessage()
             ]);
         }
     }
@@ -322,36 +322,26 @@ class ChatController extends BaseController
     }
 
     /**
-     * Obtener token para WebSocket
+     * Obtener URL del WebSocket
      */
-    public function getWebSocketToken()
+    public function getWebSocketUrl()
     {
         try {
-            $userId = session('idusuario');
+            // En Railway, el WebSocket estará en el mismo dominio pero puerto diferente
+            $baseUrl = base_url();
+            $wsUrl = str_replace(['http://', 'https://'], ['ws://', 'wss://'], $baseUrl);
+            $wsUrl = rtrim($wsUrl, '/') . ':3000';
             
-            if (!$userId) {
-                return $this->response->setJSON([
-                    'success' => false,
-                    'error' => 'Usuario no autenticado'
-                ]);
-            }
-
-            // Generar token JWT simple (en producción usar JWT real)
-            $token = base64_encode(json_encode([
-                'userId' => $userId,
-                'timestamp' => time(),
-                'expires' => time() + (24 * 60 * 60) // 24 horas
-            ]));
-
             return $this->response->setJSON([
                 'success' => true,
-                'token' => $token
+                'data' => [
+                    'url' => $wsUrl
+                ]
             ]);
-
         } catch (\Exception $e) {
             return $this->response->setJSON([
                 'success' => false,
-                'error' => $e->getMessage()
+                'message' => $e->getMessage()
             ]);
         }
     }
