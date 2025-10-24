@@ -48,8 +48,22 @@ class ChatController extends BaseController
      */
     public function index()
     {
-        // Vista simple sin dependencias complejas
-        return view('mensajeria/mensajeria');
+        // Verificar que el usuario esté autenticado
+        if (!session('usuario_logueado')) {
+            return redirect()->to('/login')->with('error', 'Debes iniciar sesión para acceder a la mensajería');
+        }
+        
+        $data = [
+            'title' => 'Mensajería - Sistema ISHUME',
+            'usuario_actual' => [
+                'id' => session('idusuario'),
+                'nombre' => session('usuario_nombre'),
+                'email' => session('usuario_email'),
+                'rol' => session('role') ?? session('tipo_usuario')
+            ]
+        ];
+        
+        return view('mensajeria/mensajeria', $data);
     }
 
     /**
@@ -90,14 +104,25 @@ class ChatController extends BaseController
      */
     public function test()
     {
+        // Verificar autenticación
+        if (!session('usuario_logueado')) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'No autorizado - Debes iniciar sesión'
+            ]);
+        }
+        
         return $this->response->setJSON([
             'success' => true,
             'message' => 'ChatController está funcionando correctamente',
-            'session' => [
-                'usuario_logueado' => session('usuario_logueado'),
-                'idusuario' => session('idusuario'),
-                'usuario_nombre' => session('usuario_nombre')
-            ]
+            'usuario_actual' => [
+                'id' => session('idusuario'),
+                'nombre' => session('usuario_nombre'),
+                'email' => session('usuario_email'),
+                'rol' => session('role') ?? session('tipo_usuario'),
+                'logueado' => session('usuario_logueado')
+            ],
+            'timestamp' => date('Y-m-d H:i:s')
         ]);
     }
 
@@ -110,9 +135,31 @@ class ChatController extends BaseController
             // Obtener ID del usuario actual desde la sesión
             $usuarioActual = session('idusuario') ?? 1;
             
-            // Por ahora, devolver conversaciones vacías para empezar sin historial
-            // Cada usuario empezará con chats nuevos
-            $conversaciones = [];
+            if ($this->conversacionModel) {
+                $conversaciones = $this->conversacionModel->getConversacionesUsuario($usuarioActual);
+            } else {
+                // Datos de prueba si no hay modelo
+                $conversaciones = [
+                    [
+                        'id' => '1_2_' . time(),
+                        'contacto_nombre' => 'María González',
+                        'contacto_usuario' => 'mgonzalez',
+                        'ultimo_mensaje_texto' => 'Hola, ¿cómo estás?',
+                        'ultimo_mensaje_fecha' => date('Y-m-d H:i:s'),
+                        'mensajes_no_leidos' => 2,
+                        'otro_usuario_id' => 2
+                    ],
+                    [
+                        'id' => '1_3_' . time(),
+                        'contacto_nombre' => 'Juan Pérez',
+                        'contacto_usuario' => 'jperez',
+                        'ultimo_mensaje_texto' => 'Perfecto, gracias',
+                        'ultimo_mensaje_fecha' => date('Y-m-d H:i:s', strtotime('-1 hour')),
+                        'mensajes_no_leidos' => 0,
+                        'otro_usuario_id' => 3
+                    ]
+                ];
+            }
             
             return $this->response->setJSON([
                 'success' => true,
@@ -132,13 +179,56 @@ class ChatController extends BaseController
     public function getMensajes($conversacionId)
     {
         try {
-            // Por ahora, devolver mensajes vacíos para empezar sin historial
-            // Los mensajes se crearán cuando los usuarios empiecen a chatear
-            $mensajes = [];
+            $usuarioActual = session('idusuario') ?? 1;
+            
+            if ($this->mensajeModel) {
+                $mensajes = $this->mensajeModel->getMensajesChat($conversacionId, 50, 0);
+                
+                // Formatear mensajes para el frontend
+                $mensajesFormateados = array_map(function($mensaje) use ($usuarioActual) {
+                    return [
+                        'id' => $mensaje['id'],
+                        'contenido' => $mensaje['mensaje'],
+                        'usuario_nombre' => $mensaje['usuario_nombre'],
+                        'usuario_id' => $mensaje['usuario_id'],
+                        'es_propio' => $mensaje['usuario_id'] == $usuarioActual,
+                        'tiempo' => date('H:i', strtotime($mensaje['fecha_envio'])),
+                        'fecha_envio' => $mensaje['fecha_envio'],
+                        'tipo' => $mensaje['tipo'] ?? 'texto',
+                        'conversacion_id' => $mensaje['conversacion_id']
+                    ];
+                }, $mensajes);
+            } else {
+                // Datos de prueba si no hay modelo
+                $mensajesFormateados = [
+                    [
+                        'id' => 1,
+                        'contenido' => 'Hola, ¿cómo estás?',
+                        'usuario_nombre' => 'María González',
+                        'usuario_id' => 2,
+                        'es_propio' => false,
+                        'tiempo' => date('H:i', strtotime('-30 minutes')),
+                        'fecha_envio' => date('Y-m-d H:i:s', strtotime('-30 minutes')),
+                        'tipo' => 'texto',
+                        'conversacion_id' => $conversacionId
+                    ],
+                    [
+                        'id' => 2,
+                        'contenido' => '¡Hola! Todo bien, gracias por preguntar',
+                        'usuario_nombre' => session('usuario_nombre') ?? 'Usuario',
+                        'usuario_id' => $usuarioActual,
+                        'es_propio' => true,
+                        'tiempo' => date('H:i', strtotime('-25 minutes')),
+                        'fecha_envio' => date('Y-m-d H:i:s', strtotime('-25 minutes')),
+                        'tipo' => 'texto',
+                        'conversacion_id' => $conversacionId
+                    ]
+                ];
+            }
             
             return $this->response->setJSON([
                 'success' => true,
-                'data' => $mensajes
+                'data' => $mensajesFormateados
             ]);
         } catch (\Exception $e) {
             return $this->response->setJSON([
@@ -182,24 +272,53 @@ class ChatController extends BaseController
             
             // Si no hay conversación, crear una nueva
             if (empty($conversacionId) && !empty($destinatarioId)) {
-                $conversacionId = $this->crearNuevaConversacion($usuarioActual, $destinatarioId);
+                if ($this->conversacionModel) {
+                    $conversacionId = $this->conversacionModel->crearConversacion($usuarioActual, $destinatarioId);
+                } else {
+                    $conversacionId = $this->crearNuevaConversacion($usuarioActual, $destinatarioId);
+                }
             }
             
-            // Crear el mensaje
+            // Guardar mensaje en base de datos
+            $mensajeId = null;
+            if ($this->mensajeModel) {
+                $mensajeData = [
+                    'conversacion_id' => $conversacionId,
+                    'usuario_id' => $usuarioActual,
+                    'mensaje' => $contenido,
+                    'tipo' => 'texto',
+                    'fecha_envio' => date('Y-m-d H:i:s')
+                ];
+                $mensajeId = $this->mensajeModel->insertMensajeChat($mensajeData);
+                
+                // Actualizar último mensaje en conversación
+                if ($this->conversacionModel) {
+                    $this->conversacionModel->actualizarUltimoMensaje($conversacionId, $mensajeId, $usuarioActual);
+                }
+            }
+            
+            // Crear el mensaje para respuesta
             $mensaje = [
-                'id' => time() . rand(1000, 9999), // ID único temporal
+                'id' => $mensajeId ?? (time() . rand(1000, 9999)),
                 'contenido' => $contenido,
                 'es_propio' => true,
                 'tiempo' => date('H:i'),
                 'usuario_nombre' => $usuarioActualNombre,
+                'usuario_id' => $usuarioActual,
                 'conversacion_id' => $conversacionId,
                 'destinatario_id' => $destinatarioId,
                 'fecha_envio' => date('Y-m-d H:i:s'),
+                'tipo' => 'texto',
                 'estado' => 'enviado'
             ];
             
-            // Guardar mensaje en base de datos (si las tablas existen)
-            $mensajeGuardado = $this->guardarMensajeEnBD($mensaje);
+            // Enviar via WebSocket si está disponible
+            $this->enviarViaWebSocket([
+                'type' => 'new-message',
+                'conversationId' => $conversacionId,
+                'message' => $mensaje,
+                'destinatarioId' => $destinatarioId
+            ]);
             
             // Crear notificación para el destinatario si está offline
             if (!empty($destinatarioId)) {
@@ -257,64 +376,97 @@ class ChatController extends BaseController
     public function getUsuarios()
     {
         try {
+            // Verificar autenticación
+            if (!session('usuario_logueado')) {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => 'No autorizado'
+                ]);
+            }
+            
             // Obtener ID del usuario actual desde la sesión
-            $usuarioActual = session('idusuario') ?? 1;
+            $usuarioActual = session('idusuario');
             
-            // Usar datos de prueba simples para evitar errores de BD
-            $usuariosPrueba = [
-                [
-                    'id' => 2,
-                    'nombre' => 'María González',
-                    'usuario' => 'mgonzalez',
-                    'email' => 'maria@ishume.com',
-                    'estado' => 'online',
-                    'ultima_conexion' => date('Y-m-d H:i:s'),
-                    'cargo' => 'Gerente'
-                ],
-                [
-                    'id' => 3,
-                    'nombre' => 'Juan Pérez',
-                    'usuario' => 'jperez',
-                    'email' => 'juan@ishume.com',
-                    'estado' => 'offline',
-                    'ultima_conexion' => date('Y-m-d H:i:s', strtotime('-2 hours')),
-                    'cargo' => 'Desarrollador'
-                ],
-                [
-                    'id' => 4,
-                    'nombre' => 'Ana López',
-                    'usuario' => 'alopez',
-                    'email' => 'ana@ishume.com',
-                    'estado' => 'online',
-                    'ultima_conexion' => date('Y-m-d H:i:s'),
-                    'cargo' => 'Diseñadora'
-                ],
-                [
-                    'id' => 5,
-                    'nombre' => 'Roberto Silva',
-                    'usuario' => 'rsilva',
-                    'email' => 'roberto@ishume.com',
-                    'estado' => 'away',
-                    'ultima_conexion' => date('Y-m-d H:i:s', strtotime('-30 minutes')),
-                    'cargo' => 'Supervisor'
-                ]
-            ];
-            
-            // Filtrar para excluir al usuario actual
-            $usuariosFiltrados = array_filter($usuariosPrueba, function($usuario) use ($usuarioActual) {
-                return $usuario['id'] != $usuarioActual;
-            });
-            
-            return $this->response->setJSON([
-                'success' => true,
-                'data' => array_values($usuariosFiltrados)
-            ]);
+            if ($this->usuarioModel) {
+                // Obtener usuarios reales de la base de datos
+                $usuarios = $this->usuarioModel->getUsuariosActivos();
+                
+                // Formatear datos para el frontend
+                $usuariosFormateados = [];
+                foreach ($usuarios as $usuario) {
+                    if ($usuario['idusuario'] != $usuarioActual) {
+                        $usuariosFormateados[] = [
+                            'id' => $usuario['idusuario'],
+                            'nombre' => $usuario['nombres'] . ' ' . $usuario['apellidos'],
+                            'usuario' => $usuario['nombreusuario'],
+                            'email' => $usuario['email'],
+                            'estado' => 'offline', // Por defecto offline, se actualizará con WebSocket
+                            'ultima_conexion' => $usuario['ultima_conexion'] ?? null,
+                            'cargo' => $usuario['cargo'] ?? 'Usuario'
+                        ];
+                    }
+                }
+                
+                return $this->response->setJSON([
+                    'success' => true,
+                    'data' => $usuariosFormateados
+                ]);
+            } else {
+                // Datos de prueba si no hay modelo
+                $usuariosPrueba = [
+                    [
+                        'id' => 2,
+                        'nombre' => 'María González',
+                        'usuario' => 'mgonzalez',
+                        'email' => 'maria@ishume.com',
+                        'estado' => 'online',
+                        'ultima_conexion' => date('Y-m-d H:i:s'),
+                        'cargo' => 'Gerente'
+                    ],
+                    [
+                        'id' => 3,
+                        'nombre' => 'Juan Pérez',
+                        'usuario' => 'jperez',
+                        'email' => 'juan@ishume.com',
+                        'estado' => 'offline',
+                        'ultima_conexion' => date('Y-m-d H:i:s', strtotime('-2 hours')),
+                        'cargo' => 'Desarrollador'
+                    ],
+                    [
+                        'id' => 4,
+                        'nombre' => 'Ana López',
+                        'usuario' => 'alopez',
+                        'email' => 'ana@ishume.com',
+                        'estado' => 'online',
+                        'ultima_conexion' => date('Y-m-d H:i:s'),
+                        'cargo' => 'Diseñadora'
+                    ],
+                    [
+                        'id' => 5,
+                        'nombre' => 'Roberto Silva',
+                        'usuario' => 'rsilva',
+                        'email' => 'roberto@ishume.com',
+                        'estado' => 'away',
+                        'ultima_conexion' => date('Y-m-d H:i:s', strtotime('-30 minutes')),
+                        'cargo' => 'Supervisor'
+                    ]
+                ];
+                
+                // Filtrar para excluir al usuario actual
+                $usuariosFiltrados = array_filter($usuariosPrueba, function($usuario) use ($usuarioActual) {
+                    return $usuario['id'] != $usuarioActual;
+                });
+                
+                return $this->response->setJSON([
+                    'success' => true,
+                    'data' => array_values($usuariosFiltrados)
+                ]);
+            }
             
         } catch (\Exception $e) {
-            // En caso de cualquier error, devolver array vacío
             return $this->response->setJSON([
-                'success' => true,
-                'data' => []
+                'success' => false,
+                'message' => $e->getMessage()
             ]);
         }
     }

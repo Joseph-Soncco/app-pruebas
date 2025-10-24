@@ -18,23 +18,25 @@ $routes->get('welcome', 'Home::index');
 $routes->get('dashboard', 'AuthController::dashboard', ['filter' => 'auth']);
 
 // ==================== RUTAS DE MENSAJERÍA EN TIEMPO REAL ====================
-// Página principal de mensajería
-$routes->get('mensajeria', 'ChatController::index');
+// Página principal de mensajería (requiere autenticación)
+$routes->get('mensajeria', 'ChatController::index', ['filter' => 'auth']);
 
 // Método de prueba
-$routes->get('mensajeria/test', 'ChatController::test');
+$routes->get('mensajeria/test', 'ChatController::test', ['filter' => 'auth']);
 
-// APIs AJAX para mensajería
-$routes->get('mensajeria/getConversaciones', 'ChatController::getConversaciones');
-$routes->post('mensajeria/getConversaciones', 'ChatController::getConversaciones');
-$routes->get('mensajeria/getMensajes/(:num)', 'ChatController::getMensajes/$1');
-$routes->get('mensajeria/getConversaciones/(:num)/mensajes', 'ChatController::getMensajes/$1');
-$routes->post('mensajeria/enviarMensaje', 'ChatController::enviarMensaje');
-$routes->post('mensajeria/marcarLeido', 'ChatController::marcarLeido');
-$routes->get('mensajeria/getUsuarios', 'ChatController::getUsuarios');
-$routes->post('mensajeria/crearConversacion', 'ChatController::crearConversacion');
-$routes->get('mensajeria/getWebSocketUrl', 'ChatController::getWebSocketUrl');
-$routes->get('mensajeria/getNotificaciones', 'ChatController::getNotificaciones');
+// APIs AJAX para mensajería (todas requieren autenticación)
+$routes->group('mensajeria', ['filter' => 'auth'], function($routes) {
+    $routes->get('getConversaciones', 'ChatController::getConversaciones');
+    $routes->post('getConversaciones', 'ChatController::getConversaciones');
+    $routes->get('getMensajes/(:num)', 'ChatController::getMensajes/$1');
+    $routes->get('getConversaciones/(:num)/mensajes', 'ChatController::getMensajes/$1');
+    $routes->post('enviarMensaje', 'ChatController::enviarMensaje');
+    $routes->post('marcarLeido', 'ChatController::marcarLeido');
+    $routes->get('getUsuarios', 'ChatController::getUsuarios');
+    $routes->post('crearConversacion', 'ChatController::crearConversacion');
+    $routes->get('getWebSocketUrl', 'ChatController::getWebSocketUrl');
+    $routes->get('getNotificaciones', 'ChatController::getNotificaciones');
+});
 
 // APIs adicionales para usuarios
 $routes->get('usuarios/getUsuariosActivos', 'UsuariosController::getUsuariosActivos');

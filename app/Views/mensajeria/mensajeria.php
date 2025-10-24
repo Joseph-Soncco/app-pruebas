@@ -32,6 +32,9 @@
                                 <h6 class="mb-0 fw-bold">Usuario del Sistema</h6>
                                 <small class="text-muted">usuario@sistema.com</small>
                             </div>
+                            <div class="text-end">
+                                <i id="indicador-conexion" class="fas fa-circle text-success" title="Conectado"></i>
+                            </div>
                         </div>
                     </div>
 
@@ -158,111 +161,7 @@
     <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="<?= base_url('assets/js/mensajeria-static.js') ?>"></script>
-    
-    <script>
-        // JavaScript básico para la mensajería
-        $(document).ready(function() {
-            console.log('Mensajería cargada correctamente');
-            
-            // Cargar usuarios disponibles
-            cargarUsuariosDisponibles();
-            
-            // Event listeners
-            $('#btn-nuevo-mensaje-main').click(function() {
-                $('#modalNuevoMensaje').modal('show');
-            });
-            
-            $('#form-enviar-mensaje').submit(function(e) {
-                e.preventDefault();
-                enviarMensaje();
-            });
-        });
-        
-        function cargarUsuariosDisponibles() {
-            $.get('<?= base_url('mensajeria/getUsuarios') ?>')
-                .done(function(response) {
-                    if (response.success) {
-                        mostrarUsuarios(response.data);
-                    }
-                })
-                .fail(function() {
-                    console.log('Error cargando usuarios');
-                });
-        }
-        
-        function mostrarUsuarios(usuarios) {
-            let html = '';
-            usuarios.forEach(function(usuario) {
-                html += `
-                    <div class="conversation-item p-3 border-bottom" onclick="iniciarConversacion(${usuario.id}, '${usuario.nombre}')">
-                        <div class="d-flex align-items-center">
-                            <div class="me-3">
-                                <i class="fas fa-user-circle fa-2x text-primary"></i>
-                            </div>
-                            <div class="flex-grow-1">
-                                <h6 class="mb-0">${usuario.nombre}</h6>
-                                <small class="text-muted">${usuario.cargo}</small>
-                            </div>
-                            <div class="text-end">
-                                <span class="badge bg-${usuario.estado === 'online' ? 'success' : 'secondary'}">${usuario.estado}</span>
-                            </div>
-                        </div>
-                    </div>
-                `;
-            });
-            $('#usuarios-disponibles').html(html);
-        }
-        
-        function iniciarConversacion(usuarioId, nombreUsuario) {
-            $('#destinatario-id').val(usuarioId);
-            $('#nombre-destinatario').text(nombreUsuario);
-            $('#header-chat').show();
-            $('#area-escritura').show();
-            $('#modalNuevoMensaje').modal('hide');
-            
-            // Mostrar mensaje de bienvenida
-            $('#area-mensajes').html(`
-                <div class="text-center p-4">
-                    <h5>Conversación con ${nombreUsuario}</h5>
-                    <p class="text-muted">Comienza a escribir tu mensaje...</p>
-                </div>
-            `);
-        }
-        
-        function enviarMensaje() {
-            const mensaje = $('#mensaje-texto').val();
-            const destinatarioId = $('#destinatario-id').val();
-            
-            if (!mensaje.trim()) return;
-            
-            $.post('<?= base_url('mensajeria/enviarMensaje') ?>', {
-                contenido: mensaje,
-                destinatario_id: destinatarioId
-            })
-            .done(function(response) {
-                if (response.success) {
-                    // Agregar mensaje a la conversación
-                    agregarMensaje(response.data, true);
-                    $('#mensaje-texto').val('');
-                }
-            })
-            .fail(function() {
-                alert('Error al enviar mensaje');
-            });
-        }
-        
-        function agregarMensaje(mensaje, esPropio) {
-            const html = `
-                <div class="message-bubble ${esPropio ? 'message-sent' : 'message-received'} p-2 mb-2 rounded">
-                    <div class="fw-bold">${mensaje.usuario_nombre}</div>
-                    <div>${mensaje.contenido}</div>
-                    <small class="opacity-75">${mensaje.tiempo}</small>
-                </div>
-            `;
-            $('#area-mensajes').append(html);
-            $('#area-mensajes').scrollTop($('#area-mensajes')[0].scrollHeight);
-        }
-    </script>
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <script src="<?= base_url('assets/js/mensajeria-realtime.js') ?>"></script>
 </body>
 </html>
