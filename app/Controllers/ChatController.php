@@ -101,14 +101,15 @@ class ChatController extends BaseController
     {
         try {
             // Obtener ID del usuario actual desde la sesión
-            $usuarioActual = session('idusuario') ?? 1; // Fallback para pruebas
+            $usuarioActual = session('idusuario') ?? 1;
             
-            // Generar conversaciones específicas para este usuario
-            $conversacionesPrueba = $this->generarConversacionesPorUsuario($usuarioActual);
+            // Por ahora, devolver conversaciones vacías para empezar sin historial
+            // Cada usuario empezará con chats nuevos
+            $conversaciones = [];
             
             return $this->response->setJSON([
                 'success' => true,
-                'data' => $conversacionesPrueba
+                'data' => $conversaciones
             ]);
         } catch (\Exception $e) {
             return $this->response->setJSON([
@@ -124,15 +125,13 @@ class ChatController extends BaseController
     public function getMensajes($conversacionId)
     {
         try {
-            // Obtener ID del usuario actual desde la sesión
-            $usuarioActual = session('idusuario') ?? 1; // Fallback para pruebas
-            
-            // Generar mensajes específicos para esta conversación y usuario
-            $mensajesPrueba = $this->generarMensajesPorConversacion($conversacionId, $usuarioActual);
+            // Por ahora, devolver mensajes vacíos para empezar sin historial
+            // Los mensajes se crearán cuando los usuarios empiecen a chatear
+            $mensajes = [];
             
             return $this->response->setJSON([
                 'success' => true,
-                'data' => $mensajesPrueba
+                'data' => $mensajes
             ]);
         } catch (\Exception $e) {
             return $this->response->setJSON([
@@ -149,62 +148,49 @@ class ChatController extends BaseController
     {
         try {
             $conversacionId = $this->request->getPost('conversacion_id');
-            $mensaje = $this->request->getPost('mensaje');
-            $tipo = $this->request->getPost('tipo') ?? 'texto';
-
+            $contenido = $this->request->getPost('contenido');
+            $destinatarioId = $this->request->getPost('destinatario_id');
+            
             // Validaciones
-            if (empty($conversacionId) || empty($mensaje)) {
+            if (empty($contenido)) {
                 return $this->response->setJSON([
                     'success' => false,
-                    'error' => 'Datos requeridos faltantes'
+                    'message' => 'El mensaje no puede estar vacío'
                 ]);
             }
-
-            // Verificar acceso a la conversación
-            if (!$this->tieneAccesoConversacion($conversacionId)) {
-                return $this->response->setJSON([
-                    'success' => false,
-                    'error' => 'No tienes acceso a esta conversación'
-                ]);
+            
+            $usuarioActual = session('idusuario') ?? 1;
+            $usuarioActualNombre = session('usuario_nombre') ?? 'Usuario';
+            
+            // Si no hay conversación, crear una nueva
+            if (empty($conversacionId) && !empty($destinatarioId)) {
+                $conversacionId = $this->crearNuevaConversacion($usuarioActual, $destinatarioId);
             }
-
-            // Guardar mensaje en base de datos
-            $mensajeData = [
+            
+            // Crear el mensaje
+            $mensaje = [
+                'id' => time(), // ID temporal
+                'contenido' => $contenido,
+                'es_propio' => true,
+                'tiempo' => date('H:i'),
+                'usuario_nombre' => $usuarioActualNombre,
                 'conversacion_id' => $conversacionId,
-                'usuario_id' => session('idusuario'),
-                'mensaje' => $mensaje,
-                'tipo' => $tipo,
                 'fecha_envio' => date('Y-m-d H:i:s')
             ];
-
-            $mensajeId = $this->mensajeModel->insertMensajeChat($mensajeData);
-
-            if ($mensajeId) {
-                // Obtener mensaje completo con información del usuario
-                $mensajeCompleto = $this->mensajeModel->getMensajeChatCompleto($mensajeId);
-
-                // Enviar via WebSocket (opcional - el cliente también puede enviar directamente)
-                $this->enviarViaWebSocket([
-                    'event' => 'new-message',
-                    'data' => $mensajeCompleto,
-                    'conversationId' => $conversacionId
-                ]);
-
-                return $this->response->setJSON([
-                    'success' => true,
-                    'mensaje' => $mensajeCompleto
-                ]);
-            } else {
-                return $this->response->setJSON([
-                    'success' => false,
-                    'error' => 'Error al guardar el mensaje'
-                ]);
-            }
-
+            
+            // En un sistema real, aquí guardarías en la base de datos
+            // Por ahora, solo devolvemos el mensaje creado
+            
+            return $this->response->setJSON([
+                'success' => true,
+                'data' => $mensaje,
+                'conversacion_id' => $conversacionId
+            ]);
+            
         } catch (\Exception $e) {
             return $this->response->setJSON([
                 'success' => false,
-                'error' => $e->getMessage()
+                'message' => $e->getMessage()
             ]);
         }
     }
@@ -246,14 +232,34 @@ class ChatController extends BaseController
     {
         try {
             // Obtener ID del usuario actual desde la sesión
-            $usuarioActual = session('idusuario') ?? 1; // Fallback para pruebas
+            $usuarioActual = session('idusuario') ?? 1;
             
-            // Generar usuarios específicos (excluyendo al usuario actual)
-            $usuariosPrueba = $this->generarUsuariosDisponibles($usuarioActual);
+            // Lista simple de usuarios disponibles (excluyendo al usuario actual)
+            $usuariosDisponibles = [
+                1 => ['nombre' => 'Carlos Eduardo García López', 'cargo' => 'Administrador'],
+                2 => ['nombre' => 'María González', 'cargo' => 'Gerente'],
+                3 => ['nombre' => 'Juan Pérez', 'cargo' => 'Desarrollador'],
+                4 => ['nombre' => 'Ana López', 'cargo' => 'Diseñadora'],
+                5 => ['nombre' => 'Carmen Rosa González Pérez', 'cargo' => 'Analista'],
+                6 => ['nombre' => 'Roberto Silva', 'cargo' => 'Supervisor']
+            ];
+            
+            $usuarios = [];
+            foreach ($usuariosDisponibles as $id => $usuario) {
+                if ($id != $usuarioActual) {
+                    $usuarios[] = [
+                        'id' => $id,
+                        'nombre' => $usuario['nombre'],
+                        'cargo' => $usuario['cargo'],
+                        'estado' => 'online',
+                        'ultima_conexion' => date('Y-m-d H:i:s')
+                    ];
+                }
+            }
             
             return $this->response->setJSON([
                 'success' => true,
-                'data' => $usuariosPrueba
+                'data' => $usuarios
             ]);
         } catch (\Exception $e) {
             return $this->response->setJSON([
@@ -270,54 +276,31 @@ class ChatController extends BaseController
     {
         try {
             $usuario2Id = $this->request->getPost('usuario_id');
+            $usuario1Id = session('idusuario') ?? 1;
 
             if (empty($usuario2Id)) {
                 return $this->response->setJSON([
                     'success' => false,
-                    'error' => 'Usuario requerido'
-                ]);
-            }
-
-            $usuario1Id = session('idusuario');
-
-            // Verificar que no existe ya una conversación entre estos usuarios
-            $conversacionExistente = $this->conversacionModel->getConversacionEntreUsuarios($usuario1Id, $usuario2Id);
-
-            if ($conversacionExistente) {
-                return $this->response->setJSON([
-                    'success' => true,
-                    'conversacion' => $conversacionExistente,
-                    'message' => 'Conversación ya existe'
+                    'message' => 'Usuario requerido'
                 ]);
             }
 
             // Crear nueva conversación
-            $conversacionData = [
-                'usuario1_id' => $usuario1Id,
-                'usuario2_id' => $usuario2Id,
-                'fecha_creacion' => date('Y-m-d H:i:s')
-            ];
-
-            $conversacionId = $this->conversacionModel->insert($conversacionData);
-
-            if ($conversacionId) {
-                $conversacion = $this->conversacionModel->getConversacionCompleta($conversacionId);
-                
-                return $this->response->setJSON([
-                    'success' => true,
-                    'conversacion' => $conversacion
-                ]);
-            } else {
-                return $this->response->setJSON([
-                    'success' => false,
-                    'error' => 'Error al crear conversación'
-                ]);
-            }
+            $conversacionId = $this->crearNuevaConversacion($usuario1Id, $usuario2Id);
+            
+            return $this->response->setJSON([
+                'success' => true,
+                'data' => [
+                    'id' => $conversacionId,
+                    'usuario1_id' => $usuario1Id,
+                    'usuario2_id' => $usuario2Id
+                ]
+            ]);
 
         } catch (\Exception $e) {
             return $this->response->setJSON([
                 'success' => false,
-                'error' => $e->getMessage()
+                'message' => $e->getMessage()
             ]);
         }
     }
@@ -352,166 +335,17 @@ class ChatController extends BaseController
      */
 
     /**
-     * Generar conversaciones específicas por usuario
+     * Crear nueva conversación entre dos usuarios
      */
-    private function generarConversacionesPorUsuario($usuarioId)
+    private function crearNuevaConversacion($usuario1Id, $usuario2Id)
     {
-        // Base de datos de usuarios disponibles
-        $usuariosDisponibles = [
-            1 => ['nombre' => 'Carlos Eduardo García López', 'cargo' => 'Administrador'],
-            2 => ['nombre' => 'María González', 'cargo' => 'Gerente'],
-            3 => ['nombre' => 'Juan Pérez', 'cargo' => 'Desarrollador'],
-            4 => ['nombre' => 'Ana López', 'cargo' => 'Diseñadora'],
-            5 => ['nombre' => 'Carmen Rosa González Pérez', 'cargo' => 'Analista'],
-            6 => ['nombre' => 'Roberto Silva', 'cargo' => 'Supervisor']
-        ];
+        // Generar ID único para la conversación
+        $conversacionId = $usuario1Id . '_' . $usuario2Id . '_' . time();
         
-        // Generar conversaciones diferentes según el usuario
-        $conversaciones = [];
-        $conversacionId = 1;
+        // En un sistema real, aquí guardarías en la base de datos
+        // Por ahora, solo devolvemos el ID generado
         
-        foreach ($usuariosDisponibles as $id => $usuario) {
-            if ($id != $usuarioId) { // No incluir al usuario actual
-                $conversaciones[] = [
-                    'id' => $conversacionId,
-                    'nombre' => $usuario['nombre'],
-                    'ultimo_mensaje' => $this->generarUltimoMensaje($usuarioId, $id),
-                    'tiempo' => $this->generarTiempoAleatorio(),
-                    'no_leidos' => rand(0, 3),
-                    'usuario_id' => $id
-                ];
-                $conversacionId++;
-            }
-        }
-        
-        return $conversaciones;
-    }
-    
-    /**
-     * Generar mensajes específicos por conversación y usuario
-     */
-    private function generarMensajesPorConversacion($conversacionId, $usuarioActual)
-    {
-        // Base de datos de usuarios
-        $usuariosDisponibles = [
-            1 => 'Carlos Eduardo García López',
-            2 => 'María González', 
-            3 => 'Juan Pérez',
-            4 => 'Ana López',
-            5 => 'Carmen Rosa González Pérez',
-            6 => 'Roberto Silva'
-        ];
-        
-        // Determinar el otro usuario en la conversación
-        $otrosUsuarios = array_keys($usuariosDisponibles);
-        $otrosUsuarios = array_filter($otrosUsuarios, function($id) use ($usuarioActual) {
-            return $id != $usuarioActual;
-        });
-        
-        $otroUsuarioId = $otrosUsuarios[($conversacionId - 1) % count($otrosUsuarios)];
-        $otroUsuarioNombre = $usuariosDisponibles[$otroUsuarioId];
-        $usuarioActualNombre = $usuariosDisponibles[$usuarioActual] ?? 'Usuario';
-        
-        // Generar mensajes específicos para esta conversación
-        $mensajes = [
-            [
-                'id' => 1,
-                'contenido' => "Hola {$usuarioActualNombre}, ¿cómo estás?",
-                'es_propio' => false,
-                'tiempo' => '14:30',
-                'usuario_nombre' => $otroUsuarioNombre
-            ],
-            [
-                'id' => 2,
-                'contenido' => "Hola {$otroUsuarioNombre}, todo bien gracias. ¿Y tú?",
-                'es_propio' => true,
-                'tiempo' => '14:32',
-                'usuario_nombre' => $usuarioActualNombre
-            ],
-            [
-                'id' => 3,
-                'contenido' => "Perfecto, trabajando en el proyecto nuevo",
-                'es_propio' => false,
-                'tiempo' => '14:35',
-                'usuario_nombre' => $otroUsuarioNombre
-            ],
-            [
-                'id' => 4,
-                'contenido' => "Excelente, ¿necesitas ayuda con algo?",
-                'es_propio' => true,
-                'tiempo' => '14:37',
-                'usuario_nombre' => $usuarioActualNombre
-            ]
-        ];
-        
-        return $mensajes;
-    }
-    
-    /**
-     * Generar último mensaje aleatorio
-     */
-    private function generarUltimoMensaje($usuario1, $usuario2)
-    {
-        $mensajes = [
-            "Hola, ¿cómo estás?",
-            "Perfecto, gracias",
-            "Nos vemos mañana",
-            "¿Tienes tiempo para revisar el proyecto?",
-            "Excelente trabajo",
-            "¿Podemos reunirnos esta tarde?",
-            "Todo listo para la presentación",
-            "Gracias por tu ayuda"
-        ];
-        
-        return $mensajes[array_rand($mensajes)];
-    }
-    
-    /**
-     * Generar usuarios disponibles (excluyendo al usuario actual)
-     */
-    private function generarUsuariosDisponibles($usuarioActual)
-    {
-        $usuariosDisponibles = [
-            1 => ['nombre' => 'Carlos Eduardo García López', 'cargo' => 'Administrador'],
-            2 => ['nombre' => 'María González', 'cargo' => 'Gerente'],
-            3 => ['nombre' => 'Juan Pérez', 'cargo' => 'Desarrollador'],
-            4 => ['nombre' => 'Ana López', 'cargo' => 'Diseñadora'],
-            5 => ['nombre' => 'Carmen Rosa González Pérez', 'cargo' => 'Analista'],
-            6 => ['nombre' => 'Roberto Silva', 'cargo' => 'Supervisor']
-        ];
-        
-        $usuarios = [];
-        foreach ($usuariosDisponibles as $id => $usuario) {
-            if ($id != $usuarioActual) { // Excluir al usuario actual
-                $usuarios[] = [
-                    'id' => $id,
-                    'nombre' => $usuario['nombre'],
-                    'cargo' => $usuario['cargo'],
-                    'estado' => $this->generarEstadoAleatorio(),
-                    'ultima_conexion' => $this->generarUltimaConexion()
-                ];
-            }
-        }
-        
-        return $usuarios;
-    }
-    
-    /**
-     * Generar estado aleatorio
-     */
-    private function generarEstadoAleatorio()
-    {
-        $estados = ['online', 'away', 'busy'];
-        return $estados[array_rand($estados)];
-    }
-    
-    /**
-     * Generar tiempo aleatorio
-     */
-    private function generarTiempoAleatorio()
-    {
-        $tiempos = ['2 min', '5 min', '1 hora', '2 horas', '3 horas', 'Ayer', '2 días'];
-        return $tiempos[array_rand($tiempos)];
+        return $conversacionId;
     }
 
     private function tieneAccesoConversacion($conversacionId)
