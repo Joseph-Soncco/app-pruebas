@@ -36,8 +36,8 @@ try {
     // Usar la base de datos
     $pdo->exec("USE `$database`");
     
-    // Leer y ejecutar database.sql
-    $sqlFile = __DIR__ . '/app/Database/database.sql';
+    // Leer y ejecutar database_complete.sql
+    $sqlFile = __DIR__ . '/app/Database/database_complete.sql';
     if (file_exists($sqlFile)) {
         $sql = file_get_contents($sqlFile);
         // Dividir por punto y coma y ejecutar cada statement
@@ -49,56 +49,15 @@ try {
                     $pdo->exec($statement);
                 } catch (PDOException $e) {
                     // Ignorar errores de tablas que ya existen
-                    if (strpos($e->getMessage(), 'already exists') === false) {
+                    if (strpos($e->getMessage(), 'already exists') === false && 
+                        strpos($e->getMessage(), 'Duplicate entry') === false) {
                         echo "⚠️  Error en statement: " . substr($statement, 0, 50) . "...\n";
                         echo "   Error: " . $e->getMessage() . "\n";
                     }
                 }
             }
         }
-        echo "✅ Tablas principales creadas desde database.sql\n";
-    }
-    
-    // Leer y ejecutar inventario.sql
-    $inventarioFile = __DIR__ . '/app/Database/inventario.sql';
-    if (file_exists($inventarioFile)) {
-        $sql = file_get_contents($inventarioFile);
-        $statements = explode(';', $sql);
-        foreach ($statements as $statement) {
-            $statement = trim($statement);
-            if (!empty($statement) && !preg_match('/^(USE)/i', $statement)) {
-                try {
-                    $pdo->exec($statement);
-                } catch (PDOException $e) {
-                    if (strpos($e->getMessage(), 'already exists') === false) {
-                        echo "⚠️  Error en statement: " . substr($statement, 0, 50) . "...\n";
-                        echo "   Error: " . $e->getMessage() . "\n";
-                    }
-                }
-            }
-        }
-        echo "✅ Tablas de inventario creadas desde inventario.sql\n";
-    }
-    
-    // Leer y ejecutar mensajeria.sql
-    $mensajeriaFile = __DIR__ . '/app/Database/mensajeria.sql';
-    if (file_exists($mensajeriaFile)) {
-        $sql = file_get_contents($mensajeriaFile);
-        $statements = explode(';', $sql);
-        foreach ($statements as $statement) {
-            $statement = trim($statement);
-            if (!empty($statement) && !preg_match('/^(USE)/i', $statement)) {
-                try {
-                    $pdo->exec($statement);
-                } catch (PDOException $e) {
-                    if (strpos($e->getMessage(), 'already exists') === false) {
-                        echo "⚠️  Error en statement: " . substr($statement, 0, 50) . "...\n";
-                        echo "   Error: " . $e->getMessage() . "\n";
-                    }
-                }
-            }
-        }
-        echo "✅ Tablas de mensajería creadas desde mensajeria.sql\n";
+        echo "✅ Todas las tablas creadas desde database_complete.sql\n";
     }
     
     echo "\n🎉 ¡Base de datos configurada exitosamente!\n";
