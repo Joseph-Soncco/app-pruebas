@@ -3,9 +3,9 @@
 // Este script se ejecuta una vez para crear las tablas
 
 // Cargar variables de entorno
-$dotenv = parse_ini_file('.env', true);
+$dotenv = parse_ini_file('env.railway', true);
 if (!$dotenv) {
-    // Si no hay .env, usar variables del sistema
+    // Si no hay env.railway, usar variables del sistema
     $dotenv = $_ENV;
 }
 
