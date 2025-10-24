@@ -16,7 +16,20 @@ class App extends BaseConfig
      *
      * E.g., http://example.com/
      */
-    public string $baseURL = $_ENV['APP_BASE_URL'] ?? 'http://appishume.test/';
+    public string $baseURL = 'http://appishume.test/';
+
+    /**
+     * Constructor to set baseURL dynamically
+     */
+    public function __construct()
+    {
+        parent::__construct();
+        
+        // Set baseURL from environment variable if available
+        if (isset($_ENV['APP_BASE_URL']) && !empty($_ENV['APP_BASE_URL'])) {
+            $this->baseURL = $_ENV['APP_BASE_URL'];
+        }
+    }
 
     /**
      * Allowed Hostnames in the Site URL other than the hostname in the baseURL.
