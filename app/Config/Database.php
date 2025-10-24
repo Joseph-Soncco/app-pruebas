@@ -51,33 +51,6 @@ class Database extends Config
         ],
     ];
 
-    /**
-     * Constructor to set database configuration dynamically
-     */
-    public function __construct()
-    {
-        parent::__construct();
-        
-        // Set database configuration from environment variables
-        if (isset($_ENV['DB_HOST']) && !empty($_ENV['DB_HOST'])) {
-            $this->default['hostname'] = $_ENV['DB_HOST'];
-        }
-        if (isset($_ENV['DB_USER']) && !empty($_ENV['DB_USER'])) {
-            $this->default['username'] = $_ENV['DB_USER'];
-        }
-        if (isset($_ENV['DB_PASSWORD'])) {
-            $this->default['password'] = $_ENV['DB_PASSWORD'];
-        }
-        if (isset($_ENV['DB_NAME']) && !empty($_ENV['DB_NAME'])) {
-            $this->default['database'] = $_ENV['DB_NAME'];
-        }
-        if (isset($_ENV['DB_PORT']) && !empty($_ENV['DB_PORT'])) {
-            $this->default['port'] = (int)$_ENV['DB_PORT'];
-        }
-        if (isset($_ENV['CI_ENVIRONMENT']) && $_ENV['CI_ENVIRONMENT'] !== 'production') {
-            $this->default['DBDebug'] = true;
-        }
-    }
 
     //    /**
     //     * Sample database connection for SQLite3.
@@ -220,6 +193,26 @@ class Database extends Config
     public function __construct()
     {
         parent::__construct();
+
+        // Set database configuration from environment variables
+        if (isset($_ENV['DB_HOST']) && !empty($_ENV['DB_HOST'])) {
+            $this->default['hostname'] = $_ENV['DB_HOST'];
+        }
+        if (isset($_ENV['DB_USER']) && !empty($_ENV['DB_USER'])) {
+            $this->default['username'] = $_ENV['DB_USER'];
+        }
+        if (isset($_ENV['DB_PASSWORD'])) {
+            $this->default['password'] = $_ENV['DB_PASSWORD'];
+        }
+        if (isset($_ENV['DB_NAME']) && !empty($_ENV['DB_NAME'])) {
+            $this->default['database'] = $_ENV['DB_NAME'];
+        }
+        if (isset($_ENV['DB_PORT']) && !empty($_ENV['DB_PORT'])) {
+            $this->default['port'] = (int)$_ENV['DB_PORT'];
+        }
+        if (isset($_ENV['CI_ENVIRONMENT']) && $_ENV['CI_ENVIRONMENT'] !== 'production') {
+            $this->default['DBDebug'] = true;
+        }
 
         // Ensure that we always set the database group to 'tests' if
         // we are currently running an automated test suite, so that
