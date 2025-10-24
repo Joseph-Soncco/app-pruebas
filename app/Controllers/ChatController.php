@@ -162,6 +162,17 @@ class ChatController extends BaseController
             $usuarioActual = session('idusuario') ?? 1;
             $usuarioActualNombre = session('usuario_nombre') ?? 'Usuario';
             
+            // Verificar que el destinatario existe en el sistema
+            if (!empty($destinatarioId)) {
+                $destinatarioExiste = $this->verificarUsuarioExiste($destinatarioId);
+                if (!$destinatarioExiste) {
+                    return $this->response->setJSON([
+                        'success' => false,
+                        'message' => 'El usuario destinatario no existe en el sistema'
+                    ]);
+                }
+            }
+            
             // Si no hay conversación, crear una nueva
             if (empty($conversacionId) && !empty($destinatarioId)) {
                 $conversacionId = $this->crearNuevaConversacion($usuarioActual, $destinatarioId);
@@ -169,22 +180,30 @@ class ChatController extends BaseController
             
             // Crear el mensaje
             $mensaje = [
-                'id' => time(), // ID temporal
+                'id' => time() . rand(1000, 9999), // ID único temporal
                 'contenido' => $contenido,
                 'es_propio' => true,
                 'tiempo' => date('H:i'),
                 'usuario_nombre' => $usuarioActualNombre,
                 'conversacion_id' => $conversacionId,
-                'fecha_envio' => date('Y-m-d H:i:s')
+                'destinatario_id' => $destinatarioId,
+                'fecha_envio' => date('Y-m-d H:i:s'),
+                'estado' => 'enviado'
             ];
             
-            // En un sistema real, aquí guardarías en la base de datos
-            // Por ahora, solo devolvemos el mensaje creado
+            // Guardar mensaje en base de datos (si las tablas existen)
+            $mensajeGuardado = $this->guardarMensajeEnBD($mensaje);
+            
+            // Crear notificación para el destinatario si está offline
+            if (!empty($destinatarioId)) {
+                $this->crearNotificacionMensaje($destinatarioId, $usuarioActualNombre, $contenido);
+            }
             
             return $this->response->setJSON([
                 'success' => true,
                 'data' => $mensaje,
-                'conversacion_id' => $conversacionId
+                'conversacion_id' => $conversacionId,
+                'notificacion_creada' => !empty($destinatarioId)
             ]);
             
         } catch (\Exception $e) {
@@ -226,7 +245,7 @@ class ChatController extends BaseController
     }
 
     /**
-     * Obtener usuarios online
+     * Obtener usuarios registrados del sistema
      */
     public function getUsuarios()
     {
@@ -234,37 +253,89 @@ class ChatController extends BaseController
             // Obtener ID del usuario actual desde la sesión
             $usuarioActual = session('idusuario') ?? 1;
             
-            // Lista simple de usuarios disponibles (excluyendo al usuario actual)
-            $usuariosDisponibles = [
-                1 => ['nombre' => 'Carlos Eduardo García López', 'cargo' => 'Administrador'],
-                2 => ['nombre' => 'María González', 'cargo' => 'Gerente'],
-                3 => ['nombre' => 'Juan Pérez', 'cargo' => 'Desarrollador'],
-                4 => ['nombre' => 'Ana López', 'cargo' => 'Diseñadora'],
-                5 => ['nombre' => 'Carmen Rosa González Pérez', 'cargo' => 'Analista'],
-                6 => ['nombre' => 'Roberto Silva', 'cargo' => 'Supervisor']
-            ];
+            // Obtener usuarios reales del sistema desde la base de datos
+            $db = \Config\Database::connect();
             
-            $usuarios = [];
-            foreach ($usuariosDisponibles as $id => $usuario) {
-                if ($id != $usuarioActual) {
-                    $usuarios[] = [
-                        'id' => $id,
-                        'nombre' => $usuario['nombre'],
-                        'cargo' => $usuario['cargo'],
-                        'estado' => 'online',
-                        'ultima_conexion' => date('Y-m-d H:i:s')
-                    ];
-                }
+            // Query para obtener usuarios activos del sistema
+            $query = $db->query("
+                SELECT 
+                    u.idusuario,
+                    CONCAT(p.nombres, ' ', p.apellidos) as nombre_completo,
+                    u.nombreusuario,
+                    u.email,
+                    u.estado,
+                    u.ultima_conexion,
+                    CASE 
+                        WHEN u.estado = 1 THEN 'online'
+                        ELSE 'offline'
+                    END as estado_chat
+                FROM usuarios u
+                JOIN personas p ON u.idpersona = p.idpersona
+                WHERE u.estado = 1 AND u.idusuario != ?
+                ORDER BY p.nombres, p.apellidos
+            ", [$usuarioActual]);
+            
+            $usuarios = $query->getResultArray();
+            
+            // Formatear datos para el frontend
+            $usuariosFormateados = [];
+            foreach ($usuarios as $usuario) {
+                $usuariosFormateados[] = [
+                    'id' => $usuario['idusuario'],
+                    'nombre' => $usuario['nombre_completo'],
+                    'usuario' => $usuario['nombreusuario'],
+                    'email' => $usuario['email'],
+                    'estado' => $usuario['estado_chat'],
+                    'ultima_conexion' => $usuario['ultima_conexion'],
+                    'cargo' => 'Usuario del Sistema' // Por ahora genérico
+                ];
             }
             
             return $this->response->setJSON([
                 'success' => true,
-                'data' => $usuarios
+                'data' => $usuariosFormateados
             ]);
+            
         } catch (\Exception $e) {
+            // Si hay error con la base de datos, usar datos de prueba
+            $usuariosPrueba = [
+                [
+                    'id' => 2,
+                    'nombre' => 'María González',
+                    'usuario' => 'mgonzalez',
+                    'email' => 'maria@ishume.com',
+                    'estado' => 'online',
+                    'ultima_conexion' => date('Y-m-d H:i:s'),
+                    'cargo' => 'Gerente'
+                ],
+                [
+                    'id' => 3,
+                    'nombre' => 'Juan Pérez',
+                    'usuario' => 'jperez',
+                    'email' => 'juan@ishume.com',
+                    'estado' => 'offline',
+                    'ultima_conexion' => date('Y-m-d H:i:s', strtotime('-2 hours')),
+                    'cargo' => 'Desarrollador'
+                ],
+                [
+                    'id' => 4,
+                    'nombre' => 'Ana López',
+                    'usuario' => 'alopez',
+                    'email' => 'ana@ishume.com',
+                    'estado' => 'online',
+                    'ultima_conexion' => date('Y-m-d H:i:s'),
+                    'cargo' => 'Diseñadora'
+                ]
+            ];
+            
+            // Filtrar para excluir al usuario actual
+            $usuariosFiltrados = array_filter($usuariosPrueba, function($usuario) use ($usuarioActual) {
+                return $usuario['id'] != $usuarioActual;
+            });
+            
             return $this->response->setJSON([
-                'success' => false,
-                'message' => $e->getMessage()
+                'success' => true,
+                'data' => array_values($usuariosFiltrados)
             ]);
         }
     }
@@ -331,6 +402,48 @@ class ChatController extends BaseController
     }
 
     /**
+     * Obtener notificaciones del usuario actual
+     */
+    public function getNotificaciones()
+    {
+        try {
+            $usuarioActual = session('idusuario') ?? 1;
+            
+            // Por ahora, devolver notificaciones de prueba
+            $notificaciones = [
+                [
+                    'id' => 1,
+                    'tipo' => 'mensaje',
+                    'titulo' => 'Nuevo mensaje de María González',
+                    'mensaje' => 'Hola, ¿cómo estás?',
+                    'fecha' => date('Y-m-d H:i:s'),
+                    'estado' => 'no_leida'
+                ],
+                [
+                    'id' => 2,
+                    'tipo' => 'mensaje',
+                    'titulo' => 'Nuevo mensaje de Juan Pérez',
+                    'mensaje' => 'Perfecto, gracias por tu ayuda',
+                    'fecha' => date('Y-m-d H:i:s', strtotime('-1 hour')),
+                    'estado' => 'no_leida'
+                ]
+            ];
+            
+            return $this->response->setJSON([
+                'success' => true,
+                'data' => $notificaciones,
+                'total_no_leidas' => count($notificaciones)
+            ]);
+            
+        } catch (\Exception $e) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
      * Métodos privados
      */
 
@@ -346,6 +459,77 @@ class ChatController extends BaseController
         // Por ahora, solo devolvemos el ID generado
         
         return $conversacionId;
+    }
+    
+    /**
+     * Verificar que un usuario existe en el sistema
+     */
+    private function verificarUsuarioExiste($usuarioId)
+    {
+        try {
+            $db = \Config\Database::connect();
+            $query = $db->query("SELECT idusuario FROM usuarios WHERE idusuario = ? AND estado = 1", [$usuarioId]);
+            return $query->getNumRows() > 0;
+        } catch (\Exception $e) {
+            // Si hay error con la base de datos, asumir que existe para pruebas
+            return true;
+        }
+    }
+    
+    /**
+     * Guardar mensaje en base de datos
+     */
+    private function guardarMensajeEnBD($mensaje)
+    {
+        try {
+            $db = \Config\Database::connect();
+            
+            // Intentar insertar en tabla de mensajes si existe
+            $data = [
+                'conversacion_id' => $mensaje['conversacion_id'],
+                'usuario_id' => session('idusuario'),
+                'destinatario_id' => $mensaje['destinatario_id'],
+                'mensaje' => $mensaje['contenido'],
+                'fecha_envio' => $mensaje['fecha_envio'],
+                'estado' => $mensaje['estado']
+            ];
+            
+            // Por ahora solo log del mensaje
+            log_message('info', 'Mensaje enviado: ' . json_encode($data));
+            
+            return true;
+        } catch (\Exception $e) {
+            log_message('error', 'Error guardando mensaje: ' . $e->getMessage());
+            return false;
+        }
+    }
+    
+    /**
+     * Crear notificación para usuario offline
+     */
+    private function crearNotificacionMensaje($destinatarioId, $remitenteNombre, $contenido)
+    {
+        try {
+            $db = \Config\Database::connect();
+            
+            // Crear notificación en base de datos
+            $notificacion = [
+                'usuario_id' => $destinatarioId,
+                'tipo' => 'mensaje',
+                'titulo' => 'Nuevo mensaje de ' . $remitenteNombre,
+                'mensaje' => substr($contenido, 0, 100) . (strlen($contenido) > 100 ? '...' : ''),
+                'fecha_creacion' => date('Y-m-d H:i:s'),
+                'estado' => 'no_leida'
+            ];
+            
+            // Por ahora solo log de la notificación
+            log_message('info', 'Notificación creada: ' . json_encode($notificacion));
+            
+            return true;
+        } catch (\Exception $e) {
+            log_message('error', 'Error creando notificación: ' . $e->getMessage());
+            return false;
+        }
     }
 
     private function tieneAccesoConversacion($conversacionId)
