@@ -14,4 +14,4 @@ cmds = [
 ]
 
 [start]
-cmd = "cd /app/public && php -S 0.0.0.0:$PORT router.php"
+cmd = "chmod +x /app/start-railway.sh && /app/start-railway.sh"

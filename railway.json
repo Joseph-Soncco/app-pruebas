@@ -3,7 +3,7 @@
     "builder": "NIXPACKS"
   },
   "deploy": {
-    "startCommand": "cd /app/public && php -S 0.0.0.0:$PORT router.php",
+    "startCommand": "chmod +x /app/start-railway.sh && /app/start-railway.sh",
     "healthcheckPath": "/health.php",
     "healthcheckTimeout": 300,
     "restartPolicyType": "ON_FAILURE",

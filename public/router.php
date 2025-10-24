@@ -1,48 +1,97 @@
 <?php
-// Router with error handling
-try {
-    $uri = urldecode(parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH));
+// Router robusto para Railway con manejo de errores
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
 
-    // Handle healthcheck endpoint directly
-    if ($uri === '/health.php' || $uri === '/health') {
-        require_once __DIR__ . '/health.php';
-        return true;
-    }
+// Configurar timeout y memoria
+set_time_limit(30);
+ini_set('memory_limit', '128M');
 
-    // Handle test endpoint
-    if ($uri === '/test.php' || $uri === '/test') {
-        require_once __DIR__ . '/test.php';
-        return true;
-    }
-
-    // Handle diagnostic endpoint
-    if ($uri === '/diagnostic.php' || $uri === '/diagnostic') {
-        require_once __DIR__ . '/diagnostic.php';
-        return true;
-    }
-
-    // Handle root path
-    if ($uri === '/') {
-        require_once __DIR__ . '/index.php';
-        return true;
-    }
-
-    // If the URI is a file that exists, serve it directly
-    if (file_exists(__DIR__ . $uri)) {
-        return false;
-    }
-
-    // For any other request, try to serve through index.php
-    require_once __DIR__ . '/index.php';
-    
-} catch (Exception $e) {
-    // Log the error
-    error_log("Router error: " . $e->getMessage());
-    
-    // Return a simple error page
+// Función para manejar errores
+function handleError($errno, $errstr, $errfile, $errline) {
+    error_log("Error: $errstr in $errfile on line $errline");
     http_response_code(500);
+    echo "Error interno del servidor";
+    exit;
+}
+
+set_error_handler('handleError');
+
+// Función para manejar excepciones
+function handleException($exception) {
+    error_log("Exception: " . $exception->getMessage());
+    http_response_code(500);
+    echo "Error interno del servidor";
+    exit;
+}
+
+set_exception_handler('handleException');
+
+// Obtener la URI
+$uri = urldecode(parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH));
+
+// Headers de seguridad
+header('X-Content-Type-Options: nosniff');
+header('X-Frame-Options: DENY');
+header('X-XSS-Protection: 1; mode=block');
+
+// Manejar endpoints específicos
+if ($uri === '/health.php' || $uri === '/health') {
     header('Content-Type: text/plain');
-    echo "Internal Server Error\n";
-    echo "Error: " . $e->getMessage() . "\n";
+    header('Cache-Control: no-cache');
+    http_response_code(200);
+    echo "OK\n";
+    echo "Timestamp: " . date('Y-m-d H:i:s') . "\n";
+    echo "Server: " . ($_SERVER['SERVER_SOFTWARE'] ?? 'PHP') . "\n";
     return true;
 }
+
+if ($uri === '/test.php' || $uri === '/test') {
+    header('Content-Type: text/plain');
+    http_response_code(200);
+    echo "Test endpoint is working!\n";
+    echo "Timestamp: " . date('Y-m-d H:i:s') . "\n";
+    echo "Request URI: " . ($_SERVER['REQUEST_URI'] ?? 'unknown') . "\n";
+    return true;
+}
+
+if ($uri === '/diagnostic.php' || $uri === '/diagnostic') {
+    header('Content-Type: text/plain');
+    http_response_code(200);
+    echo "=== Railway PHP Diagnostic ===\n";
+    echo "Timestamp: " . date('Y-m-d H:i:s') . "\n";
+    echo "PHP Version: " . phpversion() . "\n";
+    echo "Server Software: " . ($_SERVER['SERVER_SOFTWARE'] ?? 'PHP Built-in Server') . "\n";
+    echo "Request URI: " . ($_SERVER['REQUEST_URI'] ?? 'unknown') . "\n";
+    echo "Document Root: " . ($_SERVER['DOCUMENT_ROOT'] ?? 'unknown') . "\n";
+    echo "Current Working Directory: " . getcwd() . "\n";
+    echo "\n=== Environment Variables ===\n";
+    foreach ($_ENV as $key => $value) {
+        echo "$key: $value\n";
+    }
+    return true;
+}
+
+// Si es un archivo estático que existe, servirlo directamente
+if (file_exists(__DIR__ . $uri) && is_file(__DIR__ . $uri)) {
+    return false; // Dejar que el servidor PHP lo sirva
+}
+
+// Para cualquier otra ruta, usar CodeIgniter
+try {
+    // Verificar que index.php existe
+    if (!file_exists(__DIR__ . '/index.php')) {
+        throw new Exception('index.php not found');
+    }
+    
+    // Incluir CodeIgniter
+    require_once __DIR__ . '/index.php';
+    return true;
+    
+} catch (Exception $e) {
+    error_log("Router error: " . $e->getMessage());
+    http_response_code(500);
+    echo "Error interno del servidor";
+    return true;
+}
+?>
