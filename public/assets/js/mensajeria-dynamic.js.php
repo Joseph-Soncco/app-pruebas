@@ -2,6 +2,17 @@
 // Generar JavaScript dinámico para mensajería
 header('Content-Type: application/javascript');
 
+// Verificar que CodeIgniter esté disponible
+if (!function_exists('base_url')) {
+    // Si no está disponible, definir una función básica
+    function base_url($path = '') {
+        $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http';
+        $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
+        $base = $protocol . '://' . $host . '/';
+        return $base . ltrim($path, '/');
+    }
+}
+
 // Obtener la URL base
 $baseUrl = base_url();
 ?>

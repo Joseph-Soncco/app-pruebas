@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Completo de Errores</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ccc; }
+        .success { background-color: #d4edda; }
+        .error { background-color: #f8d7da; }
+        .loading { background-color: #fff3cd; }
+        button { margin: 5px; padding: 10px; }
+        .log { background: #f8f9fa; padding: 10px; margin: 10px 0; font-family: monospace; }
+    </style>
+</head>
+<body>
+    <h1>Test Completo de Errores - Railway</h1>
+    
+    <div class="test-section">
+        <h3>1. Test de Archivos Estáticos</h3>
+        <button onclick="testStaticFile('/assets/js/mensajeria-static.js')">Test JS Estático</button>
+        <button onclick="testStaticFile('/assets/css/kaiadmin.min.css')">Test CSS</button>
+        <button onclick="testStaticFile('/favicon.ico')">Test Favicon</button>
+        <div id="static-results"></div>
+    </div>
+    
+    <div class="test-section">
+        <h3>2. Test de Endpoints PHP</h3>
+        <button onclick="testEndpoint('/health.php')">Test Health</button>
+        <button onclick="testEndpoint('/test.php')">Test Endpoint</button>
+        <button onclick="testEndpoint('/diagnostic.php')">Test Diagnostic</button>
+        <div id="endpoint-results"></div>
+    </div>
+    
+    <div class="test-section">
+        <h3>3. Test de Rutas de Aplicación</h3>
+        <button onclick="testEndpoint('/')">Test Home</button>
+        <button onclick="testEndpoint('/welcome')">Test Welcome</button>
+        <button onclick="testEndpoint('/mensajeria/test')">Test Mensajería</button>
+        <div id="app-results"></div>
+    </div>
+    
+    <div class="test-section">
+        <h3>4. Test de JavaScript</h3>
+        <button onclick="testJavaScript()">Test JavaScript</button>
+        <div id="js-results"></div>
+    </div>
+    
+    <div class="test-section">
+        <h3>5. Log de Errores</h3>
+        <div id="error-log" class="log"></div>
+        <button onclick="clearLog()">Limpiar Log</button>
+    </div>
+    
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        function log(message, type = 'info') {
+            const logDiv = document.getElementById('error-log');
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = document.createElement('div');
+            logEntry.innerHTML = `[${timestamp}] ${type.toUpperCase()}: ${message}`;
+            logDiv.appendChild(logEntry);
+        }
+        
+        function clearLog() {
+            document.getElementById('error-log').innerHTML = '';
+        }
+        
+        function testStaticFile(url) {
+            const resultsDiv = document.getElementById('static-results');
+            const testDiv = document.createElement('div');
+            testDiv.className = 'loading';
+            testDiv.innerHTML = `Probando: ${url}...`;
+            resultsDiv.appendChild(testDiv);
+            
+            fetch(url)
+                .then(response => {
+                    if (response.ok) {
+                        testDiv.className = 'success';
+                        testDiv.innerHTML = `✅ ${url} - ${response.status} OK`;
+                        log(`Archivo estático ${url} cargado correctamente`, 'success');
+                    } else {
+                        testDiv.className = 'error';
+                        testDiv.innerHTML = `❌ ${url} - ${response.status} ${response.statusText}`;
+                        log(`Error cargando ${url}: ${response.status} ${response.statusText}`, 'error');
+                    }
+                })
+                .catch(error => {
+                    testDiv.className = 'error';
+                    testDiv.innerHTML = `❌ ${url} - Error: ${error.message}`;
+                    log(`Error de red ${url}: ${error.message}`, 'error');
+                });
+        }
+        
+        function testEndpoint(url) {
+            const resultsDiv = document.getElementById('endpoint-results');
+            const testDiv = document.createElement('div');
+            testDiv.className = 'loading';
+            testDiv.innerHTML = `Probando: ${url}...`;
+            resultsDiv.appendChild(testDiv);
+            
+            $.get(url)
+                .done(function(response) {
+                    testDiv.className = 'success';
+                    testDiv.innerHTML = `✅ ${url} - ${JSON.stringify(response).substring(0, 100)}...`;
+                    log(`Endpoint ${url} funcionando correctamente`, 'success');
+                })
+                .fail(function(xhr) {
+                    testDiv.className = 'error';
+                    testDiv.innerHTML = `❌ ${url} - Error: ${xhr.status} ${xhr.statusText}`;
+                    log(`Error en endpoint ${url}: ${xhr.status} ${xhr.statusText}`, 'error');
+                });
+        }
+        
+        function testJavaScript() {
+            const resultsDiv = document.getElementById('js-results');
+            const testDiv = document.createElement('div');
+            
+            try {
+                // Verificar que las variables globales existen
+                if (typeof MENSAJERIA_CONFIG !== 'undefined') {
+                    testDiv.className = 'success';
+                    testDiv.innerHTML = `✅ JavaScript cargado correctamente<br>Base URL: ${MENSAJERIA_CONFIG.baseUrl}`;
+                    log('JavaScript de mensajería cargado correctamente', 'success');
+                } else {
+                    testDiv.className = 'error';
+                    testDiv.innerHTML = `❌ MENSAJERIA_CONFIG no está definido`;
+                    log('MENSAJERIA_CONFIG no está definido', 'error');
+                }
+            } catch (error) {
+                testDiv.className = 'error';
+                testDiv.innerHTML = `❌ Error en JavaScript: ${error.message}`;
+                log(`Error en JavaScript: ${error.message}`, 'error');
+            }
+            
+            resultsDiv.appendChild(testDiv);
+        }
+        
+        // Test automático al cargar
+        $(document).ready(function() {
+            log('Iniciando tests automáticos...', 'info');
+            
+            // Test de archivos críticos
+            setTimeout(() => testStaticFile('/assets/js/mensajeria-static.js'), 1000);
+            setTimeout(() => testEndpoint('/health.php'), 2000);
+            setTimeout(() => testEndpoint('/'), 3000);
+        });
+    </script>
+</body>
+</html>

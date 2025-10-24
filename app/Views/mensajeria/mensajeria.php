@@ -177,6 +177,6 @@
     </div>
 </div>
 
-<script src="<?= base_url('assets/js/mensajeria-dynamic.js.php') ?>"></script>
+<script src="<?= base_url('assets/js/mensajeria-static.js') ?>"></script>
 
 <?= $footer ?>

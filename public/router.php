@@ -73,25 +73,38 @@ if ($uri === '/diagnostic.php' || $uri === '/diagnostic') {
 }
 
 // Si es un archivo estático que existe, servirlo directamente
-if (file_exists(__DIR__ . $uri) && is_file(__DIR__ . $uri)) {
+if ($uri !== '/' && file_exists(__DIR__ . $uri) && is_file(__DIR__ . $uri)) {
     return false; // Dejar que el servidor PHP lo sirva
 }
 
-// Para cualquier otra ruta, usar CodeIgniter
-try {
-    // Verificar que index.php existe
-    if (!file_exists(__DIR__ . '/index.php')) {
-        throw new Exception('index.php not found');
+// Manejar rutas específicas de la aplicación
+if (strpos($uri, '/mensajeria') === 0 || 
+    strpos($uri, '/auth') === 0 || 
+    strpos($uri, '/welcome') === 0 ||
+    strpos($uri, '/dashboard') === 0 ||
+    $uri === '/') {
+    
+    // Para rutas de la aplicación, usar CodeIgniter
+    try {
+        // Verificar que index.php existe
+        if (!file_exists(__DIR__ . '/index.php')) {
+            throw new Exception('index.php not found');
+        }
+        
+        // Incluir CodeIgniter
+        require_once __DIR__ . '/index.php';
+        return true;
+        
+    } catch (Exception $e) {
+        error_log("Router error: " . $e->getMessage());
+        http_response_code(500);
+        echo "Error interno del servidor";
+        return true;
     }
-    
-    // Incluir CodeIgniter
-    require_once __DIR__ . '/index.php';
-    return true;
-    
-} catch (Exception $e) {
-    error_log("Router error: " . $e->getMessage());
-    http_response_code(500);
-    echo "Error interno del servidor";
-    return true;
 }
+
+// Para cualquier otra ruta, mostrar error 404
+http_response_code(404);
+echo "Página no encontrada";
+return true;
 ?>
