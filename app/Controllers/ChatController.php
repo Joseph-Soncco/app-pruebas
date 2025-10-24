@@ -100,11 +100,34 @@ class ChatController extends BaseController
     public function getConversaciones()
     {
         try {
-            $conversaciones = $this->getConversacionesUsuario();
+            // Por ahora, devolver conversaciones de prueba
+            $conversacionesPrueba = [
+                [
+                    'id' => 1,
+                    'nombre' => 'María González',
+                    'ultimo_mensaje' => 'Hola, ¿cómo estás?',
+                    'tiempo' => '2 min',
+                    'no_leidos' => 2
+                ],
+                [
+                    'id' => 2,
+                    'nombre' => 'Juan Pérez',
+                    'ultimo_mensaje' => 'Perfecto, gracias',
+                    'tiempo' => '1 hora',
+                    'no_leidos' => 0
+                ],
+                [
+                    'id' => 3,
+                    'nombre' => 'Ana López',
+                    'ultimo_mensaje' => 'Nos vemos mañana',
+                    'tiempo' => '3 horas',
+                    'no_leidos' => 1
+                ]
+            ];
             
             return $this->response->setJSON([
                 'success' => true,
-                'data' => $conversaciones
+                'data' => $conversacionesPrueba
             ]);
         } catch (\Exception $e) {
             return $this->response->setJSON([
@@ -120,27 +143,39 @@ class ChatController extends BaseController
     public function getMensajes($conversacionId)
     {
         try {
-            $limit = $this->request->getGet('limit') ?? 50;
-            $offset = $this->request->getGet('offset') ?? 0;
-
-            // Verificar que el usuario tiene acceso a esta conversación
-            if (!$this->tieneAccesoConversacion($conversacionId)) {
-                return $this->response->setJSON([
-                    'success' => false,
-                    'error' => 'No tienes acceso a esta conversación'
-                ]);
-            }
-
-            $mensajes = $this->mensajeModel->getMensajesChat($conversacionId, $limit, $offset);
+            // Por ahora, devolver mensajes de prueba
+            $mensajesPrueba = [
+                [
+                    'id' => 1,
+                    'contenido' => 'Hola, ¿cómo estás?',
+                    'es_propio' => false,
+                    'tiempo' => '14:30',
+                    'usuario_nombre' => 'María González'
+                ],
+                [
+                    'id' => 2,
+                    'contenido' => 'Hola María, todo bien gracias. ¿Y tú?',
+                    'es_propio' => true,
+                    'tiempo' => '14:32',
+                    'usuario_nombre' => 'Carlos García'
+                ],
+                [
+                    'id' => 3,
+                    'contenido' => 'Perfecto, trabajando en el proyecto nuevo',
+                    'es_propio' => false,
+                    'tiempo' => '14:35',
+                    'usuario_nombre' => 'María González'
+                ]
+            ];
             
             return $this->response->setJSON([
                 'success' => true,
-                'mensajes' => $mensajes
+                'data' => $mensajesPrueba
             ]);
         } catch (\Exception $e) {
             return $this->response->setJSON([
                 'success' => false,
-                'error' => $e->getMessage()
+                'message' => $e->getMessage()
             ]);
         }
     }
@@ -248,11 +283,34 @@ class ChatController extends BaseController
     public function getUsuarios()
     {
         try {
-            $usuarios = $this->usuarioConectadoModel->getUsuariosOnline();
+            // Por ahora, devolver usuarios de prueba hasta que la tabla esté creada
+            $usuariosPrueba = [
+                [
+                    'id' => 1,
+                    'nombre' => 'Carlos Eduardo García López',
+                    'cargo' => 'Administrador',
+                    'estado' => 'online',
+                    'ultima_conexion' => date('Y-m-d H:i:s')
+                ],
+                [
+                    'id' => 2,
+                    'nombre' => 'María González',
+                    'cargo' => 'Gerente',
+                    'estado' => 'online',
+                    'ultima_conexion' => date('Y-m-d H:i:s')
+                ],
+                [
+                    'id' => 3,
+                    'nombre' => 'Juan Pérez',
+                    'cargo' => 'Desarrollador',
+                    'estado' => 'away',
+                    'ultima_conexion' => date('Y-m-d H:i:s', strtotime('-10 minutes'))
+                ]
+            ];
             
             return $this->response->setJSON([
                 'success' => true,
-                'data' => $usuarios
+                'data' => $usuariosPrueba
             ]);
         } catch (\Exception $e) {
             return $this->response->setJSON([
