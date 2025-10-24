@@ -22,10 +22,10 @@
   <!-- En el header -->
   <link rel="stylesheet" href="<?= base_url('assets/css/custom.css') ?>">
   <link rel="stylesheet" href="<?= base_url('assets/css/sweetalert-custom.css') ?>">
-  <link rel="icon" href="<?= base_url() . 'assets/img/kaiadmin/favicon.ico' ?>" type="image/x-icon" />
+  <link rel="icon" href="<?= base_url('assets/img/kaiadmin/favicon.ico') ?>" type="image/x-icon" />
 
   <!-- Fonts and icons -->
-  <script src="<?= base_url() . 'assets/js/plugin/webfont/webfont.min.js' ?>"></script>
+  <script src="<?= base_url('assets/js/plugin/webfont/webfont.min.js') ?>"></script>
   <script>
     WebFont.load({
       google: { families: ["Public Sans:300,400,500,600,700"] },
@@ -36,7 +36,7 @@
           "Font Awesome 5 Brands",
           "simple-line-icons",
         ],
-        urls: ["<?= base_url() . 'assets/css/fonts.min.css' ?>"],
+        urls: ["<?= base_url('assets/css/fonts.min.css') ?>"],
       },
       active: function () {
         sessionStorage.fonts = true;
@@ -45,10 +45,10 @@
   </script>
 
   <!-- CSS Files -->
-  <link rel="stylesheet" href="<?= base_url() . '/assets/css/bootstrap.min.css' ?>" />
-  <link rel="stylesheet" href="<?= base_url() . '/assets/css/plugins.min.css' ?>" />
-  <link rel="stylesheet" href="<?= base_url() . '/assets/css/kaiadmin.min.css' ?>" />
-  <link rel="stylesheet" href="<?= base_url() . 'assets/css/demo.css' ?>" />
+  <link rel="stylesheet" href="<?= base_url('assets/css/bootstrap.min.css') ?>" />
+  <link rel="stylesheet" href="<?= base_url('assets/css/plugins.min.css') ?>" />
+  <link rel="stylesheet" href="<?= base_url('assets/css/kaiadmin.min.css') ?>" />
+  <link rel="stylesheet" href="<?= base_url('assets/css/demo.css') ?>" />
   
   <!-- jQuery -->
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
@@ -62,8 +62,8 @@
       <div class="sidebar-logo">
         <!-- Logo Header -->
         <div class="logo-header" data-background-color="dark">
-          <a href="<?= base_url('/welcome') ?>" class="logo">
-            <img src="<?= base_url() . 'assets/img/kaiadmin/logo_light.svg' ?>" alt="IShume Logo" class="navbar-brand"
+          <a href="<?= base_url('welcome') ?>" class="logo">
+            <img src="<?= base_url('assets/img/kaiadmin/logo_light.svg') ?>" alt="IShume Logo" class="navbar-brand"
               height="20" />
           </a>
           <div class="nav-toggle">
@@ -404,8 +404,8 @@
         <div class="main-header-logo">
           <!-- Logo Header -->
           <div class="logo-header" data-background-color="dark">
-            <a href="<?= base_url('/welcome') ?>" class="logo">
-              <img src="<?= base_url() . 'assets/img/kaiadmin/logo_light.svg' ?>" alt="IShume Logo" class="navbar-brand"
+            <a href="<?= base_url('welcome') ?>" class="logo">
+              <img src="<?= base_url('assets/img/kaiadmin/logo_light.svg') ?>" alt="IShume Logo" class="navbar-brand"
                 height="20" />
             </a>
             <div class="nav-toggle">
@@ -538,8 +538,8 @@
               <li class="nav-item topbar-user dropdown hidden-caret">
                 <a class="dropdown-toggle profile-pic" data-bs-toggle="dropdown" href="#" aria-expanded="false">
                   <div class="avatar-sm">
-                    <img src="<?= base_url() . 'assets/img/profile.jpg' ?>" alt="Avatar"
-                      class="avatar-img rounded-circle" />
+                  <img src="<?= base_url('assets/img/profile.jpg') ?>" alt="Avatar"
+                    class="avatar-img rounded-circle" />
                   </div>
                   <span class="profile-username">
                     <span class="op-7">Hola,</span>

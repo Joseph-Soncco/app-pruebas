@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test CSS Loading</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-item { margin: 10px 0; padding: 10px; border: 1px solid #ccc; }
+        .success { background-color: #d4edda; border-color: #c3e6cb; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; }
+        .loading { background-color: #fff3cd; border-color: #ffeaa7; }
+    </style>
+</head>
+<body>
+    <h1>Test de Carga de Archivos CSS</h1>
+    
+    <div id="results"></div>
+    
+    <script>
+        const cssFiles = [
+            'assets/css/bootstrap.min.css',
+            'assets/css/plugins.min.css', 
+            'assets/css/kaiadmin.min.css',
+            'assets/css/custom.css',
+            'assets/css/demo.css',
+            'assets/css/fonts.min.css'
+        ];
+        
+        const resultsDiv = document.getElementById('results');
+        
+        cssFiles.forEach(file => {
+            const testDiv = document.createElement('div');
+            testDiv.className = 'test-item loading';
+            testDiv.innerHTML = `Probando: ${file}...`;
+            resultsDiv.appendChild(testDiv);
+            
+            // Crear elemento link para probar
+            const link = document.createElement('link');
+            link.rel = 'stylesheet';
+            link.href = file;
+            
+            link.onload = function() {
+                testDiv.className = 'test-item success';
+                testDiv.innerHTML = `✅ ${file} - Cargado correctamente`;
+            };
+            
+            link.onerror = function() {
+                testDiv.className = 'test-item error';
+                testDiv.innerHTML = `❌ ${file} - Error al cargar`;
+            };
+            
+            document.head.appendChild(link);
+        });
+    </script>
+</body>
+</html>
