@@ -48,16 +48,8 @@ class ChatController extends BaseController
      */
     public function index()
     {
-        // Datos básicos para la vista - SIN VERIFICACIÓN DE SESIÓN
-        $data = [
-            'title' => 'Mensajería en Tiempo Real',
-            'conversaciones' => [], // Inicialmente vacío hasta que se configure la BD
-            'usuarios_online' => [], // Inicialmente vacío hasta que se configure la BD
-            'header' => view('Layouts/header'),
-            'footer' => view('Layouts/footer')
-        ];
-
-        return view('mensajeria/mensajeria', $data);
+        // Vista simple sin dependencias complejas
+        return view('mensajeria/mensajeria');
     }
 
     /**
