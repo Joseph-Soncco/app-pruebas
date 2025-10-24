@@ -27,6 +27,7 @@ $routes->get('mensajeria/test', 'ChatController::test');
 // APIs AJAX para mensajería
 $routes->get('mensajeria/getConversaciones', 'ChatController::getConversaciones');
 $routes->get('mensajeria/getMensajes/(:num)', 'ChatController::getMensajes/$1');
+$routes->get('mensajeria/getConversaciones/(:num)/mensajes', 'ChatController::getMensajes/$1');
 $routes->post('mensajeria/enviarMensaje', 'ChatController::enviarMensaje');
 $routes->post('mensajeria/marcarLeido', 'ChatController::marcarLeido');
 $routes->get('mensajeria/getUsuarios', 'ChatController::getUsuarios');
