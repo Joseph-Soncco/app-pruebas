@@ -17,6 +17,12 @@ $routes->get('auth/check-session', 'AuthController::checkSession');
 $routes->get('welcome', 'Home::index', ['filter' => 'auth']);
 $routes->get('dashboard', 'AuthController::dashboard', ['filter' => 'auth']);
 
+// Rutas de prueba sin autenticación
+$routes->get('test-welcome', 'Home::index');
+$routes->get('test-mensajeria', 'ChatController::testView');
+$routes->get('test-simple', 'TestController::simple');
+$routes->get('test-controller', 'TestController::index');
+
 // ==================== RUTAS DE MENSAJERÍA EN TIEMPO REAL ====================
 $routes->group('', ['filter' => 'auth'], function($routes) {
     // Página principal de mensajería
